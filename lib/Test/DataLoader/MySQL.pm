@@ -32,6 +32,7 @@ sub new {
     my ($dbh) = @_;
     my $self = {
         dbh => $dbh,
+        loaded => [],
     };
     bless $self, $class;
 }
@@ -66,6 +67,32 @@ sub load {
         $sth->bind_param($i++, $data{$column});
     }
     $sth->execute();
+    push @{$self->{loaded}}, [$table_name, \%data, $self->_key($table_name, $data_id)];
+}
+
+=head2 do_select
+
+do select statement
+
+=cut
+
+sub do_select {
+    my $self = shift;
+    my ($table, $condition) = @_;
+    my $dbh = $self->{dbh};
+    croak( "Error: condition undefined" ) if !defined $condition;
+
+    my $sth = $dbh->prepare("select * from $table where $condition");
+    $sth->execute();
+
+    my @result;
+    while( my $item = $sth->fetchrow_hashref ) {
+        push @result, $item;
+    }
+    $sth->finish();
+
+    return @result if wantarray;
+    return $result[0];
 }
 
 sub _insert_sql {
@@ -80,6 +107,35 @@ sub _data {
     my $self = shift;
     my ($table_name, $data_id) = @_;
     return $self->{data}->{$table_name}->{$data_id}->{data};
+}
+
+sub _key {
+    my $self = shift;
+    my ($table_name, $data_id) = @_;
+    return $self->{data}->{$table_name}->{$data_id}->{key};
+}
+
+sub _loaded {
+    my $self = shift;
+    return $self->{loaded};
+}
+
+sub DESTROY {
+    my $self = shift;
+    my $dbh = $self->{dbh};
+    for my $loaded ( @{$self->_loaded} ) {
+        my $table = $loaded->[0];
+        my %data = %{$loaded->[1]};
+        my @keys = @{$loaded->[2]};
+        my $condition = join(',', map { "$_=?" } @keys);
+
+        my $sth = $dbh->prepare("delete from $table where $condition");
+        my $i=1;
+        for my $key ( @keys ) {
+            $sth->bind_param($i++, $data{$key});
+        }
+        $sth->execute();
+    }
 }
 
 1;
