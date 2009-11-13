@@ -32,11 +32,14 @@ $data->add('foo', 2,
 
 is($data->_insert_sql('foo', 1), "insert into foo set id=?,name=?");
 
+my $keys;
 
-$data->load('foo', 1);#load data #1
-
+$keys = $data->load('foo', 1);#load data #1
+is($keys->{id}, 1);
 is_deeply( $data->_loaded, [['foo', {id=>1, name=>'aaa'}, ['id']]]);
-$data->load('foo', 2);#load data #2
+
+$keys = $data->load('foo', 2);#load data #2
+#is($keys->{id}, 2);
 is_deeply( $data->_loaded, [ ['foo', {id=>1, name=>'aaa'}, ['id']],
                              ['foo', {id=>2, name=>'bbb'}, ['id']], ]);
 

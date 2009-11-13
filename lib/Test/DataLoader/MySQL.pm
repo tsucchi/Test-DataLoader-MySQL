@@ -57,18 +57,42 @@ sub load {
     my $self = shift;
     my ($table_name, $data_id) = @_;
     my $dbh = $self->{dbh};
-
-    my $sql = sprintf( $self->_insert_sql($table_name, $data_id) );
-    my $sth = $dbh->prepare($sql);
-
-    my $i=1;
     my %data = %{$self->_data($table_name, $data_id)};
+
+    my $sth = $dbh->prepare($self->_insert_sql($table_name, $data_id));
+    my $i=1;
     for my $column ( sort keys %data ) {
         $sth->bind_param($i++, $data{$column});
     }
     $sth->execute();
+    $sth->finish;
+
+    my $keys = $self->_set_loaded_keys($table_name, $data_id, \%data);
+
     push @{$self->{loaded}}, [$table_name, \%data, $self->_key($table_name, $data_id)];
+
+    $dbh->do('commit');
+    return $keys;
 }
+
+sub _set_loaded_keys {
+    my $self = shift;
+    my($table_name, $data_id, $data_href) = @_;
+    my $dbh = $self->{dbh};
+
+    my $result;
+    for my $key ( @{$self->_key($table_name, $data_id)} ) {
+        if ( !defined $data_href->{$key} ) {
+            my $sth = $dbh->prepare("select LAST_INSERT_ID() from dual");
+            $sth->execute();
+            my @id = $sth->fetchrow_array;
+            $data_href->{$key} = $id[0];
+        }
+        $result->{$key} = $data_href->{$key};
+    }
+    return $result;
+}
+
 
 =head2 do_select
 
@@ -135,7 +159,9 @@ sub DESTROY {
             $sth->bind_param($i++, $data{$key});
         }
         $sth->execute();
+        $sth->finish;
     }
+    $dbh->do('commit');
 }
 
 1;

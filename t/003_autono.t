@@ -1,0 +1,51 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use Test::More;
+
+eval { use Test::mysqld };
+plan skip_all => "Test::mysqld is need for test" if ( $@ );
+
+use t::util;
+use Test::DataLoader::MySQL;
+
+
+my $dbh = dbh() || die $Test::mysqld::errstr;
+
+$dbh->do("CREATE TABLE foo (id INTEGER AUTO_INCREMENT, name VARCHAR(20), PRIMARY KEY(id))") || die $dbh->errstr;
+$dbh->do("insert into foo set name='xxx'");
+
+my $data = Test::DataLoader::MySQL->new($dbh);
+$data->add('foo', 1,
+           {
+               name => 'aaa',
+           },
+           ['id']);
+$data->add('foo', 2,
+           {
+               name => 'bbb',
+           },
+           ['id']);
+
+my $keys;
+$keys = $data->load('foo', 1);#load data #1
+is( $keys->{id}, 2);
+is_deeply( $data->_loaded, [['foo', {id=>2, name=>'aaa'}, ['id']]]);
+
+$keys = $data->load('foo', 2);#load data #2
+is( $keys->{id}, 3);
+is_deeply( $data->_loaded, [ ['foo', {id=>2, name=>'aaa'}, ['id']],
+                             ['foo', {id=>3, name=>'bbb'}, ['id']], ]);
+
+
+is_deeply($data->do_select('foo', "id=2"), { id=>2, name=>'aaa'});
+is_deeply([$data->do_select('foo', "id IN(2,3)")], [ { id=>2, name=>'aaa'},
+                                                     { id=>3, name=>'bbb'},]);
+
+
+
+# if $data::DESTOROY is called, data is deleted
+$data = undef;#DESTOROY
+is_deeply(do_select($dbh, 'foo', "1=1"), { id=>1, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
+
+done_testing();

@@ -9,12 +9,15 @@ our @EXPORT = qw(dbh do_select);
 
 our $mysqld;
 
-sub dbh {
+BEGIN {
     $mysqld = Test::mysqld->new(
         my_cnf => {
             'skip-networking' => '',
         }
     );
+}
+
+sub dbh {
     return if !$mysqld;
 
     my $dbh = DBI->connect(
