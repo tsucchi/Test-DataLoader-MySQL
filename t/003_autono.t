@@ -3,14 +3,16 @@ use strict;
 use warnings;
 use Test::More;
 
-eval { use Test::mysqld };
+eval "use Test::mysqld";
 plan skip_all => "Test::mysqld is need for test" if ( $@ );
 
-use t::util;
 use Test::DataLoader::MySQL;
 
-
-my $dbh = dbh() || die $Test::mysqld::errstr;
+my $mysqld = Test::mysqld->new( my_cnf => {
+                                  'skip-networking' => '',
+                                }
+                              );
+my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
 
 $dbh->do("CREATE TABLE foo (id INTEGER AUTO_INCREMENT, name VARCHAR(20), PRIMARY KEY(id))") || die $dbh->errstr;
 $dbh->do("insert into foo set name='xxx'");
@@ -46,6 +48,8 @@ is_deeply([$data->do_select('foo', "id IN(2,3)")], [ { id=>2, name=>'aaa'},
 
 # if $data::DESTOROY is called, data is deleted
 $data = undef;#DESTOROY
-is_deeply(do_select($dbh, 'foo', "1=1"), { id=>1, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
+
+$data = Test::DataLoader::MySQL->new($dbh);
+is_deeply($data->do_select('foo', "1=1"), { id=>1, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
 
 done_testing();

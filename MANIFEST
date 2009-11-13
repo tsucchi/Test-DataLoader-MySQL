@@ -12,6 +12,8 @@ MANIFEST			This list of files
 META.yml
 t/001_use_ok.t
 t/002_basic.t
+t/003_autono.t
+t/004_keep_data.t
 t/996_pod_coverage.t
 t/997_pod.t
 t/998_perlcritic.t

@@ -3,13 +3,15 @@ use strict;
 use warnings;
 use Test::More;
 
-eval { use Test::mysqld };
+eval "use Test::mysqld";
 plan skip_all => "Test::mysqld is need for test" if ( $@ );
 
-use t::util;
 use Test::DataLoader::MySQL;
-
-my $dbh = dbh() || die $Test::mysqld::errstr;;
+my $mysqld = Test::mysqld->new( my_cnf => {
+                                  'skip-networking' => '',
+                                }
+                              );
+my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
 
 $dbh->do("CREATE TABLE foo (id INTEGER, name VARCHAR(20))");
 $dbh->do("insert into foo set id=0,name='xxx'");
@@ -33,11 +35,13 @@ $data->load('foo', 2);#load data #2
 
 # if $data::DESTOROY is called, data is deleted
 $data = undef;#DESTOROY
+
+$data = Test::DataLoader::MySQL->new($dbh);
 my $expected = [
     { id=>0, name=>'xxx'},
     { id=>1, name=>'aaa'},
     { id=>2, name=>'bbb'},
 ];
-is_deeply([do_select($dbh, 'foo', "1=1")], $expected);#remain all data because Keep option specified
+is_deeply([$data->do_select('foo', "1=1")], $expected);#remain all data because Keep option specified
 
 done_testing();
