@@ -29,10 +29,11 @@ parameter $dbh is needed;
 
 sub new {
     my $class = shift;
-    my ($dbh) = @_;
+    my ($dbh, %options) = @_;
     my $self = {
         dbh => $dbh,
         loaded => [],
+        Keep => exists $options{Keep} ? $options{Keep} :  0,
     };
     bless $self, $class;
 }
@@ -82,7 +83,7 @@ sub _set_loaded_keys {
 
     my $result;
     for my $key ( @{$self->_key($table_name, $data_id)} ) {
-        if ( !defined $data_href->{$key} ) {
+        if ( !defined $data_href->{$key} ) { #for auto_increment
             my $sth = $dbh->prepare("select LAST_INSERT_ID() from dual");
             $sth->execute();
             my @id = $sth->fetchrow_array;
@@ -146,6 +147,12 @@ sub _loaded {
 
 sub DESTROY {
     my $self = shift;
+
+    $self->_delete_loaded_data if ( !$self->{Keep} );
+}
+
+sub _delete_loaded_data {
+    my $self = shift;
     my $dbh = $self->{dbh};
     for my $loaded ( @{$self->_loaded} ) {
         my $table = $loaded->[0];
@@ -177,7 +184,7 @@ write here if related module exists
 
 =head1 REPOSITORY
 
-write source code repository
+http://github.com/tsucchi/Test-DataLoader-MySQL
 
 =head1 LICENSE
 

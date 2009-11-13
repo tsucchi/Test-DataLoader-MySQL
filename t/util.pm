@@ -32,8 +32,15 @@ sub do_select {
 
     my $sth = $dbh->prepare("select * from $table where $condition");
     $sth->execute();
-    my $ref = $sth->fetchrow_hashref;
-    return $ref;
+
+    my @result;
+    while( my $item = $sth->fetchrow_hashref ) {
+        push @result, $item;
+    }
+    $sth->finish();
+
+    return @result if wantarray;
+    return $result[0];
 }
 
 
