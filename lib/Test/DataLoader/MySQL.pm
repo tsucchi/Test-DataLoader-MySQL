@@ -2,6 +2,7 @@ package Test::DataLoader::MySQL;
 use strict;
 use warnings;
 use DBI;
+use Carp;
 
 =head1 NAME
 
@@ -52,15 +53,22 @@ If Keep option is NOT specified(default), data loaded is deleted when object is 
 
 =cut
 
+my $singleton;
+
 sub new {
     my $class = shift;
     my ($dbh, %options) = @_;
-    my $self = {
+    my $self = defined $singleton ? $singleton : {};
+
+    $self = {
         dbh => $dbh,
         loaded => [],
         Keep => exists $options{Keep} ? $options{Keep} :  0,
     };
+
     bless $self, $class;
+    $singleton = $self;
+    return $self;
 }
 
 =head2 add
@@ -68,9 +76,13 @@ sub new {
 add testdata into this modules (not loading testdata)
 
 =cut
+
 sub add {
     my $self = shift;
     my ($table_name, $data_id, $data_href, $key_aref) = @_;
+
+    carp "already exists $table_name : $data_id" if ( exists $self->{data} &&
+                                                      exists $self->{data}->{$table_name}->{$data_id} );
     $self->{data}->{$table_name}->{$data_id} = { data => $data_href, key => $key_aref };
 }
 
@@ -84,6 +96,7 @@ sub load {
     my ($table_name, $data_id) = @_;
     my $dbh = $self->{dbh};
     my %data = %{$self->_data($table_name, $data_id)};
+    croak("data not found $table_name : $data_id") if ( !%data );
 
     my $sth = $dbh->prepare($self->_insert_sql($table_name, $data_id));
     my $i=1;
@@ -99,6 +112,33 @@ sub load {
 
     $dbh->do('commit');
     return $keys;
+}
+
+=head2 load_file
+
+add data from external file
+
+=cut
+
+sub load_file {
+    my $self = shift;
+    my ( $filename ) = @_;
+    require $filename;
+    croak("can't read $filename") if ( $@ );
+}
+
+=head2 init
+
+create new instance for external file
+
+=cut
+
+sub init {
+    my $class = shift;
+    my $self = defined $singleton ? $singleton : { };
+    bless $self, $class;
+    $singleton = $self;
+    return $self;
 }
 
 sub _set_loaded_keys {
@@ -156,6 +196,7 @@ sub _insert_sql {
 sub _data {
     my $self = shift;
     my ($table_name, $data_id) = @_;
+
     return $self->{data}->{$table_name}->{$data_id}->{data};
 }
 
@@ -193,7 +234,7 @@ sub _delete_loaded_data {
         $sth->execute();
         $sth->finish;
     }
-    $dbh->do('commit');
+    $dbh->do('commit') if defined $dbh;
 }
 
 1;
