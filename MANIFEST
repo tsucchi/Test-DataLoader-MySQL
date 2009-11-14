@@ -18,4 +18,3 @@ t/996_pod_coverage.t
 t/997_pod.t
 t/998_perlcritic.t
 t/perlcriticrc
-t/util.pm
