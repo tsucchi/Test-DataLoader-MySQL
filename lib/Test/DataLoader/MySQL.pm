@@ -273,7 +273,7 @@ sub DESTROY {
 sub _delete_loaded_data {
     my $self = shift;
     my $dbh = $self->{dbh};
-    for my $loaded ( @{$self->_loaded} ) {
+    for my $loaded ( reverse @{$self->_loaded} ) {
         my $table = $loaded->[0];
         my %data = %{$loaded->[1]};
         my @keys = @{$loaded->[2]};
