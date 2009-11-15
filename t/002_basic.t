@@ -6,6 +6,7 @@ use Test::More;
 eval "use Test::mysqld";
 plan skip_all => "Test::mysqld is need for test" if ( $@ );
 
+plan tests => 8;
 use Test::DataLoader::MySQL;
 
 my $mysqld = Test::mysqld->new( my_cnf => {
@@ -57,4 +58,4 @@ $data = undef;#DESTOROY
 $data = Test::DataLoader::MySQL->new($dbh);
 is_deeply($data->do_select('foo', "1=1"), { id=>0, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
 
-done_testing();
+

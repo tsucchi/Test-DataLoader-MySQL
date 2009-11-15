@@ -6,6 +6,8 @@ use Test::More;
 eval "use Test::mysqld";
 plan skip_all => "Test::mysqld is need for test" if ( $@ );
 
+plan tests => 1;
+
 use Test::DataLoader::MySQL;
 my $mysqld = Test::mysqld->new( my_cnf => {
                                   'skip-networking' => '',
@@ -44,4 +46,3 @@ my $expected = [
 ];
 is_deeply([$data->do_select('foo', "1=1")], $expected);#remain all data because Keep option specified
 
-done_testing();
