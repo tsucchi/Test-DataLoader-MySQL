@@ -51,7 +51,7 @@ Test::DataLoader::MySQL - Load testdata into MySQL database
   # in your testcode
   my $data = Test::DataLoader::MySQL->new($dbh);
   $data->load('foo', 1);
-   #...
+  #...
 
 =head1 DESCRIPTION
 
@@ -69,15 +69,16 @@ my $singleton; #instance object is shared for reading data from external file.
 
 create new instance
 parameter $dbh(provided by DBI) is required;
-If Keep option is NOT specified(default), loaded data is deleted when instance is destoroyed, otherwise(specified Keep option) loaded data is remain.
+If Keep option is NOT specified(default), loaded data is deleted when instance is destroyed, otherwise(specified Keep option) loaded data is remain.
 
   #$dbh = DBI->connect(...);
 
-  my $data = Test::DataLoader::MySQL->new($dbh); # loaded data is deleted when $data is DESTOROYed
+  my $data = Test::DataLoader::MySQL->new($dbh); # loaded data is deleted when $data is DESTROYed
   # or
   my $data = Test::DataLoader::MySQL->new($dbh, Keep => 1); # loaded data is remain
 
 if you want to use external file and in external file, use init() instead of new().
+
 =cut
 
 sub new {
@@ -111,7 +112,7 @@ add testdata into this modules (not loading testdata)
 
 table_name and data_id is like a database's key. For example, table_name is 'foo' and data_id is 1 and 'foo' and 2 is dealt with defferent data even if contained data is equal( ex id=>1, name=>'aaa').
 
-Key is important, because when $data is DESTOROYed, this module delete all data which had been loaded and deleted data is found by specified key(s) in this method.
+Key is important, because when $data is DESTROYed, this module delete all data which had been loaded and deleted data is found by specified key(s) in this method.
 
 =cut
 
@@ -131,6 +132,11 @@ load testdata from this module into database.
  $data->load('foo', 1);
 
 first parameter is table_name, second parameter is data_id. meaning of them are same as specified in add-method.
+
+return hash_ref. it contains database key and value. this is useful for AUTO_INCREMENT key.
+
+ my $key = $data->load('foo', 1);
+ my $id = $key->{id};
 
 =cut
 
