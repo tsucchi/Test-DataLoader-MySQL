@@ -1,3 +1,9 @@
+2009-11-17  Takuya Tsuchida  <tsucchi@cpan.org>
+
+	* 0.0.2
+	move t/998_perlcritic.t to MANIFEST.SKIP(test only my environment)
+	fix POD typo in do_select
+
 2009-11-16  Takuya Tsuchida  <tsucchi@cpan.org>
 
 	* 0.0.1

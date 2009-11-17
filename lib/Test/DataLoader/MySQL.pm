@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.1';
+our $VERSION = '0.0.2';
 use 5.008;
 
 =head1 NAME
@@ -219,6 +219,7 @@ sub _set_loaded_keys {
 =head2 do_select
 
 do select statement
+
   $data->do_select('foo', "id=1");
 
 first parameter is table_name which you want to select. second parameter is where closure. Omitting second parameter is not allowed, if you want to use all data,  use condition which is aloways true such as "1=1".
