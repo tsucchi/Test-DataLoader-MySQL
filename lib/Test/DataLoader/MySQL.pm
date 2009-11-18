@@ -291,8 +291,7 @@ sub DESTROY {
     my $self = shift;
     if ( @{$self->_loaded} ) {
         carp "clear was not called in $0";
-        $self->clear if !$self->{Keep};
-        $singleton = undef;
+        $self->clear;
     }
 
 }
