@@ -30,11 +30,9 @@ is_deeply([$data->do_select('foo', "id IN(1,2)")], [ { id=>1, name=>'aaa'},
                                                      { id=>2, name=>'bbb'},]);
 
 
-
-# if $data::DESTOROY is called, data is deleted
-$data = undef;#DESTOROY
+$data->clear;
 
 $data = Test::DataLoader::MySQL->new($dbh);
 is($data->do_select('foo', "1=1"), undef);
-
+$data->clear;
 

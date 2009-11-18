@@ -46,10 +46,8 @@ is_deeply([$data->do_select('foo', "id IN(2,3)")], [ { id=>2, name=>'aaa'},
                                                      { id=>3, name=>'bbb'},]);
 
 
-
-# if $data::DESTOROY is called, data is deleted
-$data = undef;#DESTOROY
+$data->clear;
 
 $data = Test::DataLoader::MySQL->new($dbh);
 is_deeply($data->do_select('foo', "1=1"), { id=>1, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
-
+$data->clear;

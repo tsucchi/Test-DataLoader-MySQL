@@ -35,8 +35,7 @@ $data->add('foo', 2,
 $data->load('foo', 1);#load data #1
 $data->load('foo', 2);#load data #2
 
-# if $data::DESTOROY is called, data is deleted
-$data = undef;#DESTOROY
+$data->clear;
 
 $data = Test::DataLoader::MySQL->new($dbh);
 my $expected = [
@@ -46,3 +45,4 @@ my $expected = [
 ];
 is_deeply([$data->do_select('foo', "1=1")], $expected);#remain all data because Keep option specified
 
+$data->clear;

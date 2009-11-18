@@ -31,3 +31,4 @@ $data->load('foo', 1, { name=>'bbb' });#load data #1 but name is altered to 'aaa
 is_deeply( $data->_loaded, [['foo', {id=>1, name=>'bbb'}, ['id']]]);
 is_deeply($data->do_select('foo', "id=1"), { id=>1, name=>'bbb'});
 
+$data->clear;

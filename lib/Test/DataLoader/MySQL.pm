@@ -292,7 +292,7 @@ sub DESTROY {
     if ( @{$self->_loaded} ) {
         carp "clear was not called in $0";
         $self->clear if !$self->{Keep};
-        $self->{loaded} = [];
+        $singleton = undef;
     }
 
 }
@@ -307,7 +307,10 @@ sub clear {
     my $self = shift;
     my $dbh = $self->{dbh};
 
-    return if !defined $dbh;
+    if ( $self->{Keep} || !defined $dbh ) {
+        $self->{loaded} = [];
+        return;
+    }
 
     for my $loaded ( reverse @{$self->_loaded} ) {
         my $table = $loaded->[0];
@@ -324,6 +327,7 @@ sub clear {
         $sth->finish;
     }
     $dbh->do('commit') if defined $dbh;
+    $self->{loaded} = [];
 }
 
 1;
