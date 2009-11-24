@@ -1,7 +1,6 @@
 ^Makefile$
 ^MANIFEST.SKIP$
-^t/999_dependencies.t$
-^t/998_perlcritic.t$
 .*~$
+^xt/
 .svn
 ^.git
