@@ -1,3 +1,8 @@
+2009-11-29  Takuya Tsuchida  <tsucchi@cpan.org>
+
+	* 0.0.3
+	some tests are moved to xt and make it author_tests(xt isnt bundled in module package.)
+
 2009-11-17  Takuya Tsuchida  <tsucchi@cpan.org>
 
 	* 0.0.2

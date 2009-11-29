@@ -46,3 +46,5 @@ my $expected = [
 is_deeply([$data->do_select('foo', "1=1")], $expected);#remain all data because Keep option specified
 
 $data->clear;
+
+$mysqld->stop;

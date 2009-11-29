@@ -58,3 +58,4 @@ is_deeply($data->do_select('foo', "1=1"), { id=>0, name=>'xxx'});#remain only no
 
 $data->clear;
 
+$mysqld->stop;

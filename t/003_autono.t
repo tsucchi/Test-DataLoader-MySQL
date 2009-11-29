@@ -51,3 +51,5 @@ $data->clear;
 $data = Test::DataLoader::MySQL->new($dbh);
 is_deeply($data->do_select('foo', "1=1"), { id=>1, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
 $data->clear;
+
+$mysqld->stop;

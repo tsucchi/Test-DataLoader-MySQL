@@ -32,3 +32,5 @@ is_deeply( $data->_loaded, [['foo', {id=>1, name=>'bbb'}, ['id']]]);
 is_deeply($data->do_select('foo', "id=1"), { id=>1, name=>'bbb'});
 
 $data->clear;
+
+$mysqld->stop;

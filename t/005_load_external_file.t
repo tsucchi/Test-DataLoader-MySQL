@@ -36,3 +36,4 @@ $data = Test::DataLoader::MySQL->new($dbh);
 is($data->do_select('foo', "1=1"), undef);
 $data->clear;
 
+$mysqld->stop;

@@ -34,7 +34,7 @@ Test::DataLoader::MySQL - Load testdata into MySQL database
 
 if table has auto_increment
 
-  data->add('foo', 1,
+  $data->add('foo', 1,
            {
                name => 'aaa',
            },
@@ -306,7 +306,7 @@ sub clear {
     my $self = shift;
     my $dbh = $self->{dbh};
 
-    if ( $self->{Keep} || !defined $dbh ) {
+    if ( $self->{Keep} ) {
         $self->{loaded} = [];
         return;
     }
