@@ -4,3 +4,4 @@
 ^xt/
 .svn
 ^.git
+^.shipit$
