@@ -7,5 +7,6 @@ requires       'DBI';
 requires       'DBD::mysql';
 test_requires  'Test::More';
 test_requires  'DBI';
+recommends     'Test::mysqld' => '0.11';
 author_tests   'xt';
 WriteAll;

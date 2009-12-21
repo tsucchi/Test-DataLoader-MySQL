@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.3';
+our $VERSION = '0.0.4';
 use 5.008;
 
 =head1 NAME
