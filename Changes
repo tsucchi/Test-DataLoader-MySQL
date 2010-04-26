@@ -1,0 +1,7 @@
+0.0.2
+	- move t/998_perlcritic.t to MANIFEST.SKIP(test only my environment)
+	- fix POD typo in do_select
+
+0.0.1
+	- initial release
+

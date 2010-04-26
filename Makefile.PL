@@ -6,4 +6,5 @@ all_from       'lib/Test/DataLoader/MySQL.pm';
 requires       'DBI';
 requires       'DBD::mysql';
 test_requires  'Test::More';
+test_requires  'DBI';
 WriteAll;
