@@ -3,8 +3,8 @@ use strict;
 use warnings;
 use Test::More;
 
-eval "use Test::mysqld";
-plan skip_all => "Test::mysqld is need for test" if ( $@ );
+eval "use Test::mysqld 0.11";
+plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
 plan tests => 7;
 use Test::DataLoader::MySQL;
@@ -51,3 +51,5 @@ $data->clear;
 $data = Test::DataLoader::MySQL->new($dbh);
 is_deeply($data->do_select('foo', "1=1"), { id=>1, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
 $data->clear;
+
+$mysqld->stop;

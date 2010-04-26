@@ -3,8 +3,8 @@ use strict;
 use warnings;
 use Test::More;
 
-eval "use Test::mysqld";
-plan skip_all => "Test::mysqld is need for test" if ( $@ );
+eval "use Test::mysqld 0.11";
+plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
 plan tests => 1;
 
@@ -46,3 +46,5 @@ my $expected = [
 is_deeply([$data->do_select('foo', "1=1")], $expected);#remain all data because Keep option specified
 
 $data->clear;
+
+$mysqld->stop;

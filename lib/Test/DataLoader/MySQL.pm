@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.3';
+our $VERSION = '0.0.4';
 use 5.008;
 
 =head1 NAME
@@ -34,7 +34,7 @@ Test::DataLoader::MySQL - Load testdata into MySQL database
 
 if table has auto_increment
 
-  data->add('foo', 1,
+  $data->add('foo', 1,
            {
                name => 'aaa',
            },
@@ -306,7 +306,7 @@ sub clear {
     my $self = shift;
     my $dbh = $self->{dbh};
 
-    if ( $self->{Keep} || !defined $dbh ) {
+    if ( $self->{Keep} ) {
         $self->{loaded} = [];
         return;
     }
