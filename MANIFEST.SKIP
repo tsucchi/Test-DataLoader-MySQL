@@ -1,7 +1,7 @@
 ^Makefile$
 ^MANIFEST.SKIP$
+^MANIFEST.bak$
 .*~$
-^xt/
 .svn
 ^.git
 ^.shipit$
