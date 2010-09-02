@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.4';
+our $VERSION = '0.0.5';
 use 5.008;
 
 =head1 NAME
@@ -163,7 +163,7 @@ sub load {
         }
     }
 
-    my $sth = $dbh->prepare($self->_insert_sql($table_name, $data_id));
+    my $sth = $dbh->prepare($self->_insert_sql($table_name, %data));
     my $i=1;
     for my $column ( sort keys %data ) {
         $sth->bind_param($i++, $data{$column});
@@ -263,9 +263,9 @@ sub do_select {
 
 sub _insert_sql {
     my $self = shift;
-    my ($table_name, $data_id) = @_;
+    my ($table_name, %data) = @_;
     my $sql = sprintf("insert into %s set ", $table_name);
-    $sql .= join(',', map { "$_=?" } sort keys %{$self->_data($table_name, $data_id)});
+    $sql .= join(',', map { "$_=?" } sort keys %data);
     return $sql;
 }
 
@@ -306,7 +306,7 @@ sub clear {
     my $self = shift;
     my $dbh = $self->{dbh};
 
-    if ( $self->{Keep} ) {
+    if ( $self->{Keep} || !defined $dbh ) {
         $self->{loaded} = [];
         return;
     }
@@ -325,7 +325,7 @@ sub clear {
         $sth->execute();
         $sth->finish;
     }
-    $dbh->do('commit') if defined $dbh;
+    $dbh->do('commit');
     $self->{loaded} = [];
 }
 

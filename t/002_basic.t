@@ -6,7 +6,7 @@ use Test::More;
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
-plan tests => 8;
+plan tests => 7;
 use Test::DataLoader::MySQL;
 
 my $mysqld = Test::mysqld->new( my_cnf => {
@@ -33,7 +33,6 @@ $data->add('foo', 2,
            ['id']);
 
 
-is($data->_insert_sql('foo', 1), "insert into foo set id=?,name=?");
 
 my $keys;
 $keys = $data->load('foo', 1);#load data #1
