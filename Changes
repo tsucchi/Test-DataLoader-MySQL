@@ -1,3 +1,5 @@
+0.0.6
+    - fix: data is not cleared when multi-column primary key is used
 0.0.5
     - fix: load() with hashref option is not work.
 0.0.4
