@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.5';
+our $VERSION = '0.0.6';
 use 5.008;
 
 =head1 NAME
@@ -156,7 +156,7 @@ sub load {
     my ($table_name, $data_id, $option_href) = @_;
     my $dbh = $self->{dbh};
     my %data = %{$self->_data($table_name, $data_id)};
-    croak("data not found $table_name : $data_id") if ( !%data );
+
     if ( defined $option_href ) {
         for my $key ( keys %{$option_href} ) {
             $data{$key} = $option_href->{$key};
@@ -272,7 +272,8 @@ sub _insert_sql {
 sub _data {
     my $self = shift;
     my ($table_name, $data_id) = @_;
-
+    croak "$table_name not found"                 if ( !exists $self->{data}->{$table_name} );
+    croak "$data_id for $table_name not found"    if ( !exists $self->{data}->{$table_name}->{$data_id} );
     return $self->{data}->{$table_name}->{$data_id}->{data};
 }
 
@@ -305,7 +306,6 @@ clear all loaded data from database;
 sub clear {
     my $self = shift;
     my $dbh = $self->{dbh};
-
     if ( $self->{Keep} || !defined $dbh ) {
         $self->{loaded} = [];
         return;
@@ -315,15 +315,13 @@ sub clear {
         my $table = $loaded->[0];
         my %data = %{$loaded->[1]};
         my @keys = @{$loaded->[2]};
-        my $condition = join(',', map { "$_=?" } @keys);
-
+        my $condition = join(' And ', map { "$_=?" } @keys);
         my $sth = $dbh->prepare("delete from $table where $condition");
         my $i=1;
         for my $key ( @keys ) {
             $sth->bind_param($i++, $data{$key});
         }
-        $sth->execute();
-        $sth->finish;
+        $sth->execute() || die $dbh->errstr;
     }
     $dbh->do('commit');
     $self->{loaded} = [];
