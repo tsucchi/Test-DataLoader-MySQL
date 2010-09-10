@@ -6,7 +6,8 @@ use Test::More;
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
-plan tests => 5;
+#plan tests => 3;
+
 use Test::DataLoader::MySQL;
 
 my $mysqld = Test::mysqld->new( my_cnf => {
@@ -16,16 +17,16 @@ my $mysqld = Test::mysqld->new( my_cnf => {
 my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
 
 $dbh->do("CREATE TABLE foo (id INTEGER, name VARCHAR(20))");
-$dbh->do("insert into foo set id=0,name='xxx'");
+
 
 my $data = Test::DataLoader::MySQL->new($dbh);
-$data->add('foo', 1,
+$data->load_direct('foo',
            {
                id => 1,
                name => 'aaa',
            },
            ['id']);
-$data->add('foo', 2,
+$data->load_direct('foo',
            {
                id => 2,
                name => 'bbb',
@@ -34,23 +35,21 @@ $data->add('foo', 2,
 
 
 
-my $keys;
-$keys = $data->load('foo', 1);#load data #1
-is($keys->{id}, 1);
-
-$keys = $data->load('foo', 2);#load data #2
-is($keys->{id}, 2);
-
 is_deeply($data->do_select('foo', "id=1"), { id=>1, name=>'aaa'});
 is_deeply([$data->do_select('foo', "id IN(1,2)")], [ { id=>1, name=>'aaa'},
                                                      { id=>2, name=>'bbb'},]);
 
-
-
-$data->clear;
-$data = Test::DataLoader::MySQL->new($dbh);
-is_deeply($data->do_select('foo', "1=1"), { id=>0, name=>'xxx'});#remain only not loaded by Test::DataLoader::MySQL
+# Test auto_increment
+ $dbh->do("CREATE TABLE bar (id INTEGER AUTO_INCREMENT, name VARCHAR(20), PRIMARY KEY(id))") || die $dbh->errstr;
+ my $key = $data->load_direct('bar',
+            {
+                name => 'ccc',
+            },
+            ['id']);
+ is( $key->{id}, 1);
+ is_deeply($data->do_select('bar', "id=1"), { id=>1, name=>'ccc'});
 
 $data->clear;
 
 $mysqld->stop;
+done_testing();

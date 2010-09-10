@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.6';
+our $VERSION = '0.0.7';
 use 5.008;
 
 =head1 NAME
@@ -154,7 +154,17 @@ return hash_ref. it contains database key and value. this is useful for AUTO_INC
 sub load {
     my $self = shift;
     my ($table_name, $data_id, $option_href) = @_;
-    my $dbh = $self->{dbh};
+
+    my %data = $self->_data_with_option($table_name, $data_id, $option_href);
+    #my $keynames_aref = $self->_keynames_for($table_name, $data_id);
+    my $keynames_aref = $self->{data}->{$table_name}->{$data_id}->{key};
+
+    return $self->_load($table_name, $keynames_aref, %data);
+}
+
+sub _data_with_option {
+    my $self = shift;
+    my ($table_name, $data_id, $option_href) = @_;
     my %data = %{$self->_data($table_name, $data_id)};
 
     if ( defined $option_href ) {
@@ -162,7 +172,56 @@ sub load {
             $data{$key} = $option_href->{$key};
         }
     }
+    return %data;
+}
 
+
+
+=head2 load_direct
+
+load testdata from this module into database directly.
+
+ $data->load_direct('foo', { id=>1, name=>'aaa' }, ['id']);
+
+first parameter is table_name, second parameter is hashref for data.
+
+for example, 
+
+ my $key = $data->load_direct('foo', { id=>1, name=>'aaa' }, ['id']);
+
+is equivalent to 
+
+ $data->add('foo', 1, { id=>1, name=>'aaa' }, ['id']);
+ my $key = $data->load('foo', 1);
+
+=cut
+
+
+sub load_direct {
+    my $self = shift;
+    my ($table_name, $option_href, $keynames_aref) = @_;
+    my %data = %{ $option_href };
+
+    return $self->_load($table_name, $keynames_aref, %data);
+}
+
+sub _load {
+    my $self = shift;
+    my ($table_name, $keynames_aref, %data) = @_;
+    $self->_do_insert($table_name, %data);
+
+    my $keys = $self->_primary_keys($table_name, $keynames_aref, \%data);
+    push @{$self->{loaded}}, [$table_name, \%data, $keynames_aref];
+
+    return $keys;
+
+}
+
+
+sub _do_insert {
+    my $self = shift;
+    my ($table_name, %data) = @_;
+    my $dbh = $self->{dbh};
     my $sth = $dbh->prepare($self->_insert_sql($table_name, %data));
     my $i=1;
     for my $column ( sort keys %data ) {
@@ -170,13 +229,7 @@ sub load {
     }
     $sth->execute();
     $sth->finish;
-
-    my $keys = $self->_set_loaded_keys($table_name, $data_id, \%data);
-
-    push @{$self->{loaded}}, [$table_name, \%data, $self->_key($table_name, $data_id)];
-
     $dbh->do('commit');
-    return $keys;
 }
 
 =head2 load_file
@@ -213,20 +266,22 @@ sub init {
     return $self;
 }
 
-sub _set_loaded_keys {
+
+sub _primary_keys {
     my $self = shift;
-    my($table_name, $data_id, $data_href) = @_;
+    my ($table_name, $keynames_aref, $data_href) = @_;
     my $dbh = $self->{dbh};
 
     my $result;
-    for my $key ( @{$self->_key($table_name, $data_id)} ) {
-        if ( !defined $data_href->{$key} ) { #for auto_increment
+    for my $key ( @{ $keynames_aref } ) {
+           if ( !defined $data_href->{$key} ) { #for auto_increment
             my $sth = $dbh->prepare("select LAST_INSERT_ID() from dual");
             $sth->execute();
             my @id = $sth->fetchrow_array;
             $data_href->{$key} = $id[0];
         }
-        $result->{$key} = $data_href->{$key};
+        $result->{$key} = $data_href->{$key}
+
     }
     return $result;
 }
@@ -272,25 +327,19 @@ sub _insert_sql {
 sub _data {
     my $self = shift;
     my ($table_name, $data_id) = @_;
-    croak "$table_name not found"                 if ( !exists $self->{data}->{$table_name} );
-    croak "$data_id for $table_name not found"    if ( !exists $self->{data}->{$table_name}->{$data_id} );
+    croak "$table_name not found"               if ( !exists $self->{data}->{$table_name} );
+    croak "$data_id for $table_name not found"  if ( !exists $self->{data}->{$table_name}->{$data_id} );
     return $self->{data}->{$table_name}->{$data_id}->{data};
 }
 
-sub _key {
-    my $self = shift;
-    my ($table_name, $data_id) = @_;
-    return $self->{data}->{$table_name}->{$data_id}->{key};
-}
-
-sub _loaded {
-    my $self = shift;
-    return $self->{loaded};
-}
+# sub _loaded {
+#     my $self = shift;
+#     return $self->{loaded};
+# }
 
 sub DESTROY {
     my $self = shift;
-    if ( @{$self->_loaded} ) {
+    if ( @{ $self->{loaded} } ) {
         carp "clear was not called in $0";
         $self->clear;
     }
@@ -311,7 +360,7 @@ sub clear {
         return;
     }
 
-    for my $loaded ( reverse @{$self->_loaded} ) {
+    for my $loaded ( reverse @{ $self->{loaded} } ) {
         my $table = $loaded->[0];
         my %data = %{$loaded->[1]};
         my @keys = @{$loaded->[2]};
@@ -321,7 +370,7 @@ sub clear {
         for my $key ( @keys ) {
             $sth->bind_param($i++, $data{$key});
         }
-        $sth->execute() || die $dbh->errstr;
+        $sth->execute() || croak $dbh->errstr;
     }
     $dbh->do('commit');
     $self->{loaded} = [];
@@ -339,9 +388,13 @@ Takuya Tsuchida E<lt>tsucchi@cpan.orgE<gt>
 
 L<http://github.com/tsucchi/Test-DataLoader-MySQL>
 
-=head1 LICENSE
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (c) 2009-2010 Takuya Tsuchida
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

@@ -6,7 +6,7 @@ use Test::More;
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
-plan tests => 7;
+plan tests => 5;
 use Test::DataLoader::MySQL;
 
 my $mysqld = Test::mysqld->new( my_cnf => {
@@ -33,12 +33,10 @@ $data->add('foo', 2,
 my $keys;
 $keys = $data->load('foo', 1);#load data #1
 is( $keys->{id}, 2);
-is_deeply( $data->_loaded, [['foo', {id=>2, name=>'aaa'}, ['id']]]);
+
 
 $keys = $data->load('foo', 2);#load data #2
 is( $keys->{id}, 3);
-is_deeply( $data->_loaded, [ ['foo', {id=>2, name=>'aaa'}, ['id']],
-                             ['foo', {id=>3, name=>'bbb'}, ['id']], ]);
 
 
 is_deeply($data->do_select('foo', "id=2"), { id=>2, name=>'aaa'});

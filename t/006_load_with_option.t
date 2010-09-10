@@ -7,7 +7,7 @@ use DBI;
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
-plan tests => 2;
+plan tests => 1;
 use Test::DataLoader::MySQL;
 
 my $mysqld = Test::mysqld->new( my_cnf => {
@@ -28,7 +28,6 @@ $data->add('foo', 1,
            ['id']);
 
 $data->load('foo', 1, { name=>'bbb' });#load data #1 but name is altered to 'aaa'->'bbb'
-is_deeply( $data->_loaded, [['foo', {id=>1, name=>'bbb'}, ['id']]]);
 is_deeply($data->do_select('foo', "id=1"), { id=>1, name=>'bbb'});
 
 $data->clear;
