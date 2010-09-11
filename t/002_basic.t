@@ -2,11 +2,12 @@
 use strict;
 use warnings;
 use Test::More;
+use DBI;
 
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
-plan tests => 5;
+plan tests => 10;
 use Test::DataLoader::MySQL;
 
 my $mysqld = Test::mysqld->new( my_cnf => {
@@ -16,6 +17,7 @@ my $mysqld = Test::mysqld->new( my_cnf => {
 my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
 
 $dbh->do("CREATE TABLE foo (id INTEGER, name VARCHAR(20))");
+$dbh->do("CREATE TABLE bar (id INTEGER, name VARCHAR(20))");
 $dbh->do("insert into foo set id=0,name='xxx'");
 
 my $data = Test::DataLoader::MySQL->new($dbh);
@@ -45,6 +47,44 @@ is_deeply($data->do_select('foo', "id=1"), { id=>1, name=>'aaa'});
 is_deeply([$data->do_select('foo', "id IN(1,2)")], [ { id=>1, name=>'aaa'},
                                                      { id=>2, name=>'bbb'},]);
 
+# test load_with_option
+$data->add('bar', 1,
+           {
+               id => 1,
+               name => 'aaa',
+           },
+           ['id']);
+
+$data->load('bar', 1, { name=>'bbb' });#load data #1 but name is altered to 'aaa'->'bbb'
+is_deeply($data->do_select('bar', "id=1"), { id=>1, name=>'bbb'});
+
+
+# test auto_increment
+$dbh->do("CREATE TABLE baz (id INTEGER AUTO_INCREMENT, name VARCHAR(20), PRIMARY KEY(id))") || die $dbh->errstr;
+$dbh->do("insert into baz set name='xxx'");
+
+$data->add('baz', 1,
+           {
+               name => 'aaa',
+           },
+           ['id']);
+$data->add('baz', 2,
+           {
+               name => 'bbb',
+           },
+           ['id']);
+
+$keys = $data->load('baz', 1);#load data #1
+is( $keys->{id}, 2);
+
+
+$keys = $data->load('baz', 2);#load data #2
+is( $keys->{id}, 3);
+
+
+is_deeply($data->do_select('baz', "id=2"), { id=>2, name=>'aaa'});
+is_deeply([$data->do_select('baz', "id IN(2,3)")], [ { id=>2, name=>'aaa'},
+                                                     { id=>3, name=>'bbb'},]);
 
 
 $data->clear;

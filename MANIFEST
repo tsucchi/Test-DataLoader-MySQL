@@ -16,10 +16,9 @@ META.yml
 README
 t/001_use_ok.t
 t/002_basic.t
-t/003_autono.t
 t/004_keep_data.t
 t/005_load_external_file.t
-t/006_load_with_option.t
+t/006_load_direct.t
 t/testdata.pm
 xt/module_used.t
 xt/perlcritic.t

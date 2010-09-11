@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 use Test::More;
+use DBI;
 
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );

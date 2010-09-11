@@ -2,11 +2,12 @@
 use strict;
 use warnings;
 use Test::More;
+use DBI;
 
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
-#plan tests => 3;
+plan tests => 4;
 
 use Test::DataLoader::MySQL;
 
@@ -52,4 +53,4 @@ is_deeply([$data->do_select('foo', "id IN(1,2)")], [ { id=>1, name=>'aaa'},
 $data->clear;
 
 $mysqld->stop;
-done_testing();
+

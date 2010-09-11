@@ -156,7 +156,6 @@ sub load {
     my ($table_name, $data_id, $option_href) = @_;
 
     my %data = $self->_data_with_option($table_name, $data_id, $option_href);
-    #my $keynames_aref = $self->_keynames_for($table_name, $data_id);
     my $keynames_aref = $self->{data}->{$table_name}->{$data_id}->{key};
 
     return $self->_load($table_name, $keynames_aref, %data);
@@ -199,8 +198,8 @@ is equivalent to
 
 sub load_direct {
     my $self = shift;
-    my ($table_name, $option_href, $keynames_aref) = @_;
-    my %data = %{ $option_href };
+    my ($table_name, $data_href, $keynames_aref) = @_;
+    my %data = %{ $data_href };
 
     return $self->_load($table_name, $keynames_aref, %data);
 }
@@ -210,7 +209,7 @@ sub _load {
     my ($table_name, $keynames_aref, %data) = @_;
     $self->_do_insert($table_name, %data);
 
-    my $keys = $self->_primary_keys($table_name, $keynames_aref, \%data);
+    my $keys = $self->_primary_keys($keynames_aref, \%data);
     push @{$self->{loaded}}, [$table_name, \%data, $keynames_aref];
 
     return $keys;
@@ -222,12 +221,12 @@ sub _do_insert {
     my $self = shift;
     my ($table_name, %data) = @_;
     my $dbh = $self->{dbh};
-    my $sth = $dbh->prepare($self->_insert_sql($table_name, %data));
+    my $sth = $dbh->prepare($self->_insert_sql($table_name, %data)) || croak $dbh->errstr;
     my $i=1;
     for my $column ( sort keys %data ) {
         $sth->bind_param($i++, $data{$column});
     }
-    $sth->execute();
+    $sth->execute() || croak $dbh->errstr;
     $sth->finish;
     $dbh->do('commit');
 }
@@ -269,21 +268,29 @@ sub init {
 
 sub _primary_keys {
     my $self = shift;
-    my ($table_name, $keynames_aref, $data_href) = @_;
-    my $dbh = $self->{dbh};
+    my ($keynames_aref, $data_href) = @_;
 
     my $result;
     for my $key ( @{ $keynames_aref } ) {
-           if ( !defined $data_href->{$key} ) { #for auto_increment
-            my $sth = $dbh->prepare("select LAST_INSERT_ID() from dual");
-            $sth->execute();
-            my @id = $sth->fetchrow_array;
-            $data_href->{$key} = $id[0];
+        if ( !defined $data_href->{$key} ) { #for auto_increment
+            $data_href->{$key} = $self->_last_insert_id();
         }
         $result->{$key} = $data_href->{$key}
 
     }
     return $result;
+}
+
+sub _last_insert_id {
+    my $self = shift;
+
+    my $dbh = $self->{dbh};
+    my $sth = $dbh->prepare("select LAST_INSERT_ID() from dual") || croak $dbh->errstr;
+    $sth->execute() || croak $dbh->errstr;
+    if ( my @id = $sth->fetchrow_array ) {
+        return $id[0];
+    }
+    return;
 }
 
 
@@ -332,10 +339,6 @@ sub _data {
     return $self->{data}->{$table_name}->{$data_id}->{data};
 }
 
-# sub _loaded {
-#     my $self = shift;
-#     return $self->{loaded};
-# }
 
 sub DESTROY {
     my $self = shift;
@@ -361,19 +364,27 @@ sub clear {
     }
 
     for my $loaded ( reverse @{ $self->{loaded} } ) {
-        my $table = $loaded->[0];
-        my %data = %{$loaded->[1]};
-        my @keys = @{$loaded->[2]};
-        my $condition = join(' And ', map { "$_=?" } @keys);
-        my $sth = $dbh->prepare("delete from $table where $condition");
-        my $i=1;
-        for my $key ( @keys ) {
-            $sth->bind_param($i++, $data{$key});
-        }
-        $sth->execute() || croak $dbh->errstr;
+        $self->_delete_loaded($loaded);
     }
     $dbh->do('commit');
     $self->{loaded} = [];
+}
+
+sub _delete_loaded {
+    my $self = shift;
+    my ($loaded) = @_;
+
+    my $dbh = $self->{dbh};
+    my $table = $loaded->[0];
+    my %data = %{$loaded->[1]};
+    my @keys = @{$loaded->[2]};
+    my $condition = join(' And ', map { "$_=?" } @keys);
+    my $sth = $dbh->prepare("delete from $table where $condition");
+    my $i=1;
+    for my $key ( @keys ) {
+        $sth->bind_param($i++, $data{$key});
+    }
+    $sth->execute() || croak $dbh->errstr;
 }
 
 1;
