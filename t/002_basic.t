@@ -7,13 +7,16 @@ use DBI;
 eval "use Test::mysqld 0.11";
 plan skip_all => "Test::mysqld 0.11(or grator version) is need for test" if ( $@ );
 
-plan tests => 10;
-use Test::DataLoader::MySQL;
 
 my $mysqld = Test::mysqld->new( my_cnf => {
                                   'skip-networking' => '',
                                 }
                               );
+plan skip_all => "MySQL may not be installed" if ( !defined $mysqld );
+
+plan tests => 10;
+use Test::DataLoader::MySQL;
+
 my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
 
 $dbh->do("CREATE TABLE foo (id INTEGER, name VARCHAR(20))");
