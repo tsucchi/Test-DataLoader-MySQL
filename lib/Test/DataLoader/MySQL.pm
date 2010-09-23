@@ -207,14 +207,18 @@ sub load_direct {
 sub _load {
     my $self = shift;
     my ($table_name, $keynames_aref, %data) = @_;
-    $self->_do_insert($table_name, %data);
 
+    croak "primary keys are not defined\n" if ( !defined $keynames_aref || !@{ $keynames_aref } );
+    $self->_do_insert($table_name, %data);
     my $keys = $self->_primary_keys($keynames_aref, \%data);
+    $self->{dbh}->do('commit');
+
     push @{$self->{loaded}}, [$table_name, \%data, $keynames_aref];
 
     return $keys;
 
 }
+
 
 
 sub _do_insert {
@@ -228,7 +232,6 @@ sub _do_insert {
     }
     $sth->execute() || croak $dbh->errstr;
     $sth->finish;
-    $dbh->do('commit');
 }
 
 =head2 load_file
