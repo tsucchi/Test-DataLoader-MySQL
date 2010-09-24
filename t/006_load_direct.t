@@ -13,7 +13,7 @@ my $mysqld = Test::mysqld->new( my_cnf => {
                               );
 plan skip_all => "MySQL may not be installed" if ( !defined $mysqld );
 
-plan tests => 4;
+plan tests => 6;
 
 use Test::DataLoader::MySQL;
 
@@ -51,6 +51,25 @@ is_deeply([$data->do_select('foo', "id IN(1,2)")], [ { id=>1, name=>'aaa'},
             ['id']);
  is( $key->{id}, 1);
  is_deeply($data->do_select('bar', "id=1"), { id=>1, name=>'ccc'});
+
+
+# Test primary key check
+eval {
+    $data->load_direct('bar',
+                       {
+                           name => 'ddd',
+                       },
+                       []);
+};
+like( $@, qr/primary keys are not defined/ );
+
+eval {
+    $data->load_direct('bar',
+                       {
+                           name => 'eee',
+                       });
+};
+like( $@, qr/primary keys are not defined/ );
 
 $data->clear;
 
