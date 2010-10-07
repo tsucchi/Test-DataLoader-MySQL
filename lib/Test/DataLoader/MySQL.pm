@@ -262,9 +262,14 @@ create new instance for external file
 
 sub init {
     my $class = shift;
-    my $self = defined $singleton ? $singleton : { };
-    bless $self, $class;
-    $singleton = $self;
+    my $self = {};
+    if ( defined $singleton ) {
+        $self = $singleton;
+    }
+    else {
+        bless $self, $class;
+        $singleton = $self;
+    }
     return $self;
 }
 
@@ -276,7 +281,7 @@ sub _primary_keys {
     my $result;
     for my $key ( @{ $keynames_aref } ) {
         if ( !defined $data_href->{$key} ) { #for auto_increment
-            $data_href->{$key} = $self->_last_insert_id();
+            $data_href->{$key} = $self->_last_insert_id() || undef; #if LAST_INSERT_ID returns '0' its not auto_increment
         }
         $result->{$key} = $data_href->{$key}
 
@@ -377,12 +382,20 @@ sub _delete_loaded {
     my $self = shift;
     my ($loaded) = @_;
 
+    my( $table_name, $data_href, $keynames_aref ) = @{ $loaded };
+    $self->_delete($table_name, $data_href, $keynames_aref);
+}
+
+sub _delete {
+    my $self = shift;
+    my ($table_name, $data_href, $keynames_aref) = @_;
     my $dbh = $self->{dbh};
-    my $table = $loaded->[0];
-    my %data = %{$loaded->[1]};
-    my @keys = @{$loaded->[2]};
-    my $condition = join(' And ', map { "$_=?" } @keys);
-    my $sth = $dbh->prepare("delete from $table where $condition");
+    my %data = %{ $data_href };
+    my @keys = @{ $keynames_aref };
+    my $condition = join(' And ', map { 
+        defined $data{$_} ? "$_=?" : "$_ IS NULL"
+    } @keys);
+    my $sth = $dbh->prepare("delete from $table_name where $condition");
     my $i=1;
     for my $key ( @keys ) {
         $sth->bind_param($i++, $data{$key});
