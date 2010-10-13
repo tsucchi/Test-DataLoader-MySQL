@@ -1,5 +1,6 @@
 0.0.8
     - implement DeleteBeforeInsert option in new()
+    - implement set_keys()
     - refactoring tests
 0.0.7
     - implement load_direct()

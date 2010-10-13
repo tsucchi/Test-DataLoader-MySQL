@@ -14,7 +14,7 @@ my $mysqld = Test::mysqld->new( my_cnf => {
                               );
 plan skip_all => "MySQL may not be installed" if ( !defined $mysqld );
 
-plan tests => 18;
+plan tests => 20;
 use Test::DataLoader::MySQL;
 
 my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
@@ -141,6 +141,13 @@ eval {
 };
 like( $@, qr/primary keys are not defined/ );
 
+$data->set_keys('foo', ['id']);#if keys are defined...
+eval {
+    $data->load('foo', 100);
+    $data->load('foo', 200);
+};
+is( $@, '' );#load will success
+
 eval {
     $data->load_direct('baz',
                        {
@@ -158,6 +165,19 @@ eval {
 };
 like( $@, qr/primary keys are not defined/ );
 
+$data->set_keys('baz', ['id']);#if keys are defined...
+eval {
+    $data->load_direct('baz',
+                       {
+                           name => 'ddd',
+                       },
+                       []);
+    $data->load_direct('baz',
+                       {
+                           name => 'eee',
+                       });
+};
+is( $@, '' );#load will success
 
 $data->clear;
 $data = Test::DataLoader::MySQL->new($dbh);
