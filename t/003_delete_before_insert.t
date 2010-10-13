@@ -14,7 +14,7 @@ my $mysqld = Test::mysqld->new( my_cnf => {
                               );
 plan skip_all => "MySQL may not be installed" if ( !defined $mysqld );
 
-#plan tests => 18;
+plan tests => 4;
 use Test::DataLoader::MySQL;
 
 my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
@@ -66,4 +66,4 @@ is_deeply($data->do_select('baz', "id=2"), { id=>2, name=>'aaa'});
 
 $data->clear;
 $mysqld->stop;
-done_testing()
+
