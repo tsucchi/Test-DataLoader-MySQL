@@ -14,7 +14,7 @@ my $mysqld = Test::mysqld->new( my_cnf => {
                               );
 plan skip_all => "MySQL may not be installed" if ( !defined $mysqld );
 
-plan tests => 12;
+plan tests => 18;
 use Test::DataLoader::MySQL;
 
 my $dbh = DBI->connect($mysqld->dsn()) or die $DBI::errstr;
@@ -50,6 +50,7 @@ is_deeply($data->do_select('foo', "id=1"), { id=>1, name=>'aaa'});
 is_deeply([$data->do_select('foo', "id IN(1,2)")], [ { id=>1, name=>'aaa'},
                                                      { id=>2, name=>'bbb'},]);
 
+
 # test load_with_option
 $data->add('bar', 1,
            {
@@ -60,6 +61,27 @@ $data->add('bar', 1,
 
 $data->load('bar', 1, { name=>'bbb' });#load data #1 but name is altered to 'aaa'->'bbb'
 is_deeply($data->do_select('bar', "id=1"), { id=>1, name=>'bbb'});
+
+
+# load_direct
+$data->load_direct('foo',
+           {
+               id => 3,
+               name => 'xxx',
+           },
+           ['id']);
+$data->load_direct('foo',
+           {
+               id => 4,
+               name => 'yyy',
+           },
+           ['id']);
+
+
+
+is_deeply($data->do_select('foo', "id=3"), { id=>3, name=>'xxx'});
+is_deeply([$data->do_select('foo', "id IN(3,4)")], [ { id=>3, name=>'xxx'},
+                                                     { id=>4, name=>'yyy'},]);
 
 
 # test auto_increment
@@ -88,6 +110,14 @@ is( $keys->{id}, 3);
 is_deeply($data->do_select('baz', "id=2"), { id=>2, name=>'aaa'});
 is_deeply([$data->do_select('baz', "id IN(2,3)")], [ { id=>2, name=>'aaa'},
                                                      { id=>3, name=>'bbb'},]);
+$keys = $data->load_direct('baz',
+                           {
+                               name => 'ccc',
+                           },
+                           ['id']);
+is( $keys->{id}, 4);
+is_deeply($data->do_select('baz', "id=4"), { id=>4, name=>'ccc'});
+
 
 # Test primary key check
 $data->add('foo', 100,
@@ -108,6 +138,23 @@ like( $@, qr/primary keys are not defined/ );
 
 eval {
     $data->load('foo', 200);
+};
+like( $@, qr/primary keys are not defined/ );
+
+eval {
+    $data->load_direct('baz',
+                       {
+                           name => 'ddd',
+                       },
+                       []);
+};
+like( $@, qr/primary keys are not defined/ );
+
+eval {
+    $data->load_direct('baz',
+                       {
+                           name => 'eee',
+                       });
 };
 like( $@, qr/primary keys are not defined/ );
 
