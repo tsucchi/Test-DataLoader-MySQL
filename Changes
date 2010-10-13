@@ -1,3 +1,6 @@
+0.0.8
+    - implement DeleteBeforeInsert option in new()
+    - refactoring tests
 0.0.7
     - implement load_direct()
     - test will success if MySQL is not installed.

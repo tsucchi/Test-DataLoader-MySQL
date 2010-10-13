@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.7';
+our $VERSION = '0.0.8';
 use 5.008;
 
 =head1 NAME
@@ -83,6 +83,8 @@ If Keep option is NOT specified(default), loaded data is deleted when instance i
   my $data = Test::DataLoader::MySQL->new($dbh); # loaded data is deleted when $data is DESTROYed
   # or
   my $data = Test::DataLoader::MySQL->new($dbh, Keep => 1); # loaded data is remain
+  # or
+  my $data = Test::DataLoader::MySQL->new($dbh, DeleteBeforeInsert => 1); # delete data which has same keys before load
 
 if you want to use external file and in external file, use init() instead of new().
 
@@ -96,7 +98,8 @@ sub new {
     $self = {
         dbh => $dbh,
         loaded => [],
-        Keep => exists $options{Keep} ? $options{Keep} :  0,
+        Keep               => !!$options{Keep},
+        DeleteBeforeInsert => !!$options{DeleteBeforeInsert},
     };
 
     bless $self, $class;
@@ -209,6 +212,9 @@ sub _load {
     my ($table_name, $keynames_aref, %data) = @_;
 
     croak "primary keys are not defined\n" if ( !defined $keynames_aref || !@{ $keynames_aref } );
+    if ( $self->{DeleteBeforeInsert} && $self->_data_for_key_exists($keynames_aref, %data) ) {
+        $self->_delete($table_name, \%data, $keynames_aref);
+    }
     $self->_do_insert($table_name, %data);
     my $keys = $self->_primary_keys($keynames_aref, \%data);
     $self->{dbh}->do('commit');
@@ -217,6 +223,15 @@ sub _load {
 
     return $keys;
 
+}
+
+sub _data_for_key_exists {
+    my $self = shift;
+    my ($keynames_aref, %data) = @_;
+    for my $key ( @{ $keynames_aref } ) {
+        return 0 if ( !exists $data{$key} );
+    }
+    return 1;
 }
 
 
