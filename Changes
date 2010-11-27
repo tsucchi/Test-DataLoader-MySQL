@@ -1,3 +1,5 @@
+0.0.9
+	- successfully data are deleted even if test aborted.
 0.0.8
     - implement DeleteBeforeInsert option in new()
     - implement set_keys()
