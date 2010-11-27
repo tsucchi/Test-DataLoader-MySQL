@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.8';
+our $VERSION = '0.0.9';
 use 5.008;
 
 =head1 NAME
@@ -71,6 +71,11 @@ Load testdata into MySQL database.
 =cut
 
 my $singleton; #instance object is shared for reading data from external file.
+END {#delete data if test code is abort
+    if (defined $singleton &&  @{ $singleton->{loaded} } ) {
+        $singleton->clear;
+    }
+}
 
 =head2 new($dbh, %options)
 
