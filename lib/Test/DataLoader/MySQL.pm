@@ -5,7 +5,7 @@ use DBI;
 use DBD::mysql;
 use Carp;
 use base qw(Exporter);
-our $VERSION = '0.0.9';
+our $VERSION = '0.1.0';
 use 5.008;
 
 =head1 NAME
@@ -421,7 +421,6 @@ sub clear {
     my $dbh = $self->{dbh};
     if ( $self->{Keep} || !defined $dbh ) {
         $self->{loaded} = [];
-        $self->{keynames} = undef;
         return;
     }
 
@@ -430,7 +429,6 @@ sub clear {
     }
     $dbh->do('commit');
     $self->{loaded} = [];
-    $self->{keynames} = undef;
 }
 
 sub _delete_loaded {
